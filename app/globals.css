@@ -163,3 +163,23 @@
   .side-nav a[data-signout]:hover{color:#c0392b}
   .side-nav a[data-signout]:hover svg{stroke:#c0392b}
   .side-nav a[data-signout]::before{background:#c0392b}
+
+
+/* ---------- CLERK AUTH BUTTON ---------- */
+.auth-btn-signin {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 6px 16px;
+  background: var(--orange);
+  color: #fff;
+  border: none;
+  border-radius: 16px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .2s ease, transform .1s ease;
+}
+.auth-btn-signin:hover {
+  background: #e05d00;
+  transform: translateY(-1px);
+}

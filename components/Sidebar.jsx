@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { USER } from '../lib/user'
+import { useState } from 'react'
+import { useUser, useClerk, SignedIn, SignedOut, SignInButton } from '@clerk/nextjs'
 import {
   Overview, MyAreas, MapIcon, CalendarIcon, History, Alerts, Trust, UserIcon, SignOut,
 } from './Icons'
@@ -16,38 +16,50 @@ const NAV = [
   { id: 'method-and-trust', label: 'Method and Trust', Icon: Trust },
 ]
 
-function Avatar() {
-  const [photoOk, setPhotoOk] = useState(false)
-  const initials =
-    USER.name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('') || 'U'
+function UserProfileWidget() {
+  const { isLoaded, isSignedIn, user } = useUser()
 
-  useEffect(() => {
-    const img = new Image()
-    img.onload = () => setPhotoOk(true)
-    img.src = USER.avatar
-  }, [])
+  if (!isLoaded) {
+    return (
+      <div className="profile">
+        <div className="avatar"><div className="initials">...</div></div>
+        <div className="uname">Loading...</div>
+      </div>
+    )
+  }
+
+  if (!isSignedIn) {
+    return (
+      <div className="profile">
+        <div className="avatar"><div className="initials">?</div></div>
+        <div className="uname">Guest</div>
+        <SignInButton mode="modal">
+          <button className="auth-btn-signin" type="button">Sign In</button>
+        </SignInButton>
+      </div>
+    )
+  }
+
+  const name = user.fullName || user.username || user.primaryEmailAddress?.emailAddress || 'User'
+  const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('') || 'U'
 
   return (
-    <div className="avatar">
-      {photoOk ? <img src={USER.avatar} alt={USER.name} /> : <div className="initials">{initials}</div>}
+    <div className="profile">
+      <div className="avatar">
+        {user.imageUrl ? <img src={user.imageUrl} alt={name} /> : <div className="initials">{initials}</div>}
+      </div>
+      <div className="uname" title={name}>{name}</div>
     </div>
   )
 }
 
 export default function Sidebar({ open, onClose }) {
   const [active, setActive] = useState('overview')
+  const { signOut, openUserProfile } = useClerk()
 
   const go = (id) => {
     setActive(id)
     onClose()
-  }
-
-  const signOut = (e) => {
-    e.preventDefault()
-    onClose()
-    // Hook your real sign-out here
-    console.log('Sign out')
-    window.location.hash = 'sign-out'
   }
 
   return (
@@ -57,10 +69,7 @@ export default function Sidebar({ open, onClose }) {
         <small>IGNITE THE HARMONY</small>
       </div>
 
-      <div className="profile">
-        <Avatar />
-        <div className="uname">{USER.name}</div>
-      </div>
+      <UserProfileWidget />
 
       <nav className="side-nav">
         {NAV.map(({ id, label, Icon }) => (
@@ -72,18 +81,41 @@ export default function Sidebar({ open, onClose }) {
       </nav>
 
       <nav className="side-nav foot">
-        <a
-          href="#profile-settings"
-          className={active === 'profile-settings' ? 'active' : ''}
-          onClick={() => go('profile-settings')}
-        >
-          <UserIcon />
-          Profile &amp; Settings
-        </a>
-        <a href="#sign-out" data-signout onClick={signOut}>
-          <SignOut />
-          Sign out
-        </a>
+        <SignedIn>
+          <a
+            href="#profile-settings"
+            className={active === 'profile-settings' ? 'active' : ''}
+            onClick={(e) => {
+              e.preventDefault()
+              go('profile-settings')
+              openUserProfile?.()
+            }}
+          >
+            <UserIcon />
+            Profile &amp; Settings
+          </a>
+          <a
+            href="#sign-out"
+            data-signout
+            onClick={(e) => {
+              e.preventDefault()
+              onClose()
+              signOut?.({ redirectUrl: '/' })
+            }}
+          >
+            <SignOut />
+            Sign out
+          </a>
+        </SignedIn>
+
+        <SignedOut>
+          <SignInButton mode="modal">
+            <a href="#sign-in" onClick={(e) => { e.preventDefault(); onClose(); }}>
+              <UserIcon />
+              Sign In / Register
+            </a>
+          </SignInButton>
+        </SignedOut>
       </nav>
     </aside>
   )
