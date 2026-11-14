@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useUser, useClerk, SignedIn, SignedOut, SignInButton } from '@clerk/nextjs'
+import { useUser, useClerk, SignInButton } from '@clerk/nextjs'
 import {
   Overview, MyAreas, MapIcon, CalendarIcon, History, Alerts, Trust, UserIcon, SignOut,
 } from './Icons'
@@ -55,6 +55,7 @@ function UserProfileWidget() {
 
 export default function Sidebar({ open, onClose }) {
   const [active, setActive] = useState('overview')
+  const { isSignedIn } = useUser()
   const { signOut, openUserProfile } = useClerk()
 
   const go = (id) => {
@@ -81,41 +82,41 @@ export default function Sidebar({ open, onClose }) {
       </nav>
 
       <nav className="side-nav foot">
-        <SignedIn>
-          <a
-            href="#profile-settings"
-            className={active === 'profile-settings' ? 'active' : ''}
-            onClick={(e) => {
-              e.preventDefault()
-              go('profile-settings')
-              openUserProfile?.()
-            }}
-          >
-            <UserIcon />
-            Profile &amp; Settings
-          </a>
-          <a
-            href="#sign-out"
-            data-signout
-            onClick={(e) => {
-              e.preventDefault()
-              onClose()
-              signOut?.({ redirectUrl: '/' })
-            }}
-          >
-            <SignOut />
-            Sign out
-          </a>
-        </SignedIn>
-
-        <SignedOut>
+        {isSignedIn ? (
+          <>
+            <a
+              href="#profile-settings"
+              className={active === 'profile-settings' ? 'active' : ''}
+              onClick={(e) => {
+                e.preventDefault()
+                go('profile-settings')
+                openUserProfile?.()
+              }}
+            >
+              <UserIcon />
+              Profile &amp; Settings
+            </a>
+            <a
+              href="#sign-out"
+              data-signout
+              onClick={(e) => {
+                e.preventDefault()
+                onClose()
+                signOut?.({ redirectUrl: '/' })
+              }}
+            >
+              <SignOut />
+              Sign out
+            </a>
+          </>
+        ) : (
           <SignInButton mode="modal">
             <a href="#sign-in" onClick={(e) => { e.preventDefault(); onClose(); }}>
               <UserIcon />
               Sign In / Register
             </a>
           </SignInButton>
-        </SignedOut>
+        )}
       </nav>
     </aside>
   )
